@@ -138,7 +138,7 @@ def fetch_documents_since(session, db, since):
     if since is None:
         docs = db.AllDocuments
     elif isinstance(since, datetime.datetime):
-        from_lntime = session.CreateDateTime(since.strftime('%m/%d/%Y %H:%M:%S'))
+        from_lntime = session.CreateDateTime(since.strftime('%d/%m/%Y %H:%M:%S'))
         docs = db.GetModifiedDocuments(from_lntime)
     return docs
 
