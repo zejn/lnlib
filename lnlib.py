@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 
 import pywintypes
 from win32com.client import Dispatch
@@ -162,6 +163,10 @@ def describe_document(doc):
     for i in items:
         print i
 
+def note_created(unid):
+    "get creation time from a Note's UniversalID"
+    assert re.match('^[0-9A-F]{32}$', unid.strip().upper()), 'not a Note ID'
+    return hextimedate2datetime(unid[16:])
 
 def datetime2jdn(dt):
     "converts python datetime to julian date number"
@@ -174,7 +179,7 @@ def datetime2jdn(dt):
     return dt.day + (153*m + 2)//5 + 365*y + y//4 - y//100 + y//400 - 32045
 
 def jdn2datetime(jdn):
-    "converts julian date number to python datetime"
+    "converts Julian date number to python datetime"
 
     f = jdn + 1401 + (((4 * jdn + 274277) / 146097) * 3) / 4 - 38
     e = 4 * f + 3
@@ -187,7 +192,16 @@ def jdn2datetime(jdn):
     return datetime.datetime(Y, M, D)
 
 def hextimedate2datetime(td):
-    "extract date from Lotus Notes ID"
+    """
+    extract date from Lotus Notes ID
+
+    Note's UniversalID contains a creation time encoded in hex as a
+    Julian date number, hundredths of second and time zone information
+    
+    More information on what a Notes ID is composed of is available at
+    http://www-12.lotus.com/ldd/doc/domino_notes/9.0/api90ug.nsf/85255d56004d2bfd85255b1800631684/00d000c1005800c985255e0e00726863?OpenDocument
+    or if the url is broken, see IBM Notes C API User Guide, Appendix 1, "Anatomy of a Note ID".
+    """
     assert len(td) == 16
 
     dt = jdn2datetime(int(td[2:8], 16))
@@ -240,8 +254,17 @@ if __name__ == "__main__":
             unid = 'C1257DDC0028EDC8'
             unid = 'C1257DDC002B4524'
             unid = 'C1257DDC00481076'
-            hextimedate2datetime(unid)
+            created = hextimedate2datetime(unid)
+            self.assertEqual(created, datetime.datetime(2015, 1, 29, 14, 7, 8, 60000))
             unid = 'C1257DDC00486761'
-            hextimedate2datetime(unid)
+            created = hextimedate2datetime(unid)
+            self.assertEqual(created, datetime.datetime(2015, 1, 29, 14, 10, 50, 570000))
+                
+
+            unid = '76089E66C2532CE0C125647A0030ED69'
+            created = note_created(unid)
+            self.assertEqual(created, datetime.datetime(1997, 4, 15, 9, 54, 25, 50000))
+
+
     unittest.main()
 
