@@ -5,6 +5,7 @@ import os
 import pywintypes
 from win32com.client import Dispatch
 
+
 class ItemType:
     ACTIONCD = 16
     ASSISTANTINFO = 17
@@ -37,7 +38,8 @@ class ItemType:
     VIEWMAPDATA = 18
     VIEWMAPLAYOUT = 19
 
-ITEM_TYPES = dict([(v, k) for k,v in ItemType.__dict__.items() if not k.startswith('_')])
+ITEM_TYPES = dict([(v, k) for k, v in ItemType.__dict__.items() if not k.startswith('_')])
+
 
 def get_session(ln_key, workdir=None):
     "helper function for creating a new NotesSession"
@@ -47,10 +49,12 @@ def get_session(ln_key, workdir=None):
     session.Initialize(ln_key)
     return session
 
+
 def list_views(db):
     "list views in database"
     for v in db.Views:
         yield v.Name, v
+
 
 def list_documents(view):
     "a helper function for listing views easily in for loops"
@@ -59,6 +63,7 @@ def list_documents(view):
     while doc:
         yield doc
         doc = view.GetNextDocument(doc)
+
 
 def search(view, text):
     "full text search on a given view"
@@ -70,9 +75,10 @@ def search(view, text):
         yield doc
         doc = view.GetNextDocument()
 
+
 def windt2datetime(pytim):
     "convert windows time object (PyTime) to datetime"
-    now_datetime = datetime.datetime (
+    now_datetime = datetime.datetime(
         year=pytim.year,
         month=pytim.month,
         day=pytim.day,
@@ -82,11 +88,14 @@ def windt2datetime(pytim):
     )
     return now_datetime
 
+
 def _dt(obj):
+    "convert pywintypes.Time to datetime"
     if not type(obj) == type(pywintypes.Time(1)):
         return obj
     else:
         return windt2datetime(obj)
+
 
 def lndoc2obj(doc):
     """
@@ -117,21 +126,22 @@ def lndoc2obj(doc):
                 val = doc.GetItemValue(k.Name)
 
             r = (k.Name, {
-                    'values': val,
-                    'type': ITEM_TYPES[itm.Type],
-                    'last_modified': _dt(itm.LastModified),
-                })
+                'values': val,
+                'type': ITEM_TYPES[itm.Type],
+                'last_modified': _dt(itm.LastModified),
+            })
             vals.append(r)
     return dict(vals)
+
 
 def fetch_documents_since(session, db, since):
     """
     Query NotesDatabase by document modification time, and fetch documents.
 
     `session` is a NotesSession instance,
-    
+
     `db` is a NotesDatabase instance to fetch documents from,
-    
+
     `since` is a datetime.datetime, to only fetch documents updated after this time.
     If None, all documents are returned.
     """
@@ -142,12 +152,16 @@ def fetch_documents_since(session, db, since):
         docs = db.GetModifiedDocuments(from_lntime)
     return docs
 
+
 def describe_view(view):
+    "describe view and first document"
     doc = view.GetFirstDocument()
     print 'View:', view.Name
     describe_document(doc)
 
+
 def describe_document(doc):
+    "describe document"
     items = []
     for k in doc.Items:
         itm = doc.GetFirstItem(k.Name)
@@ -156,7 +170,7 @@ def describe_document(doc):
         else:
             val = doc.GetItemValue(itm.Name)
         r = (itm.Name, ITEM_TYPES[itm.Type], val)
-        #r = (k.Name, [_dt(i) for i in doc.GetItemValue(k.Name)])
+        # r = (k.Name, [_dt(i) for i in doc.GetItemValue(k.Name)])
         items.append(r)
     items.sort()
     for i in items:
@@ -169,9 +183,10 @@ def datetime2jdn(dt):
 
     a = (14 - dt.month) // 12
     y = dt.year + 4800 - a
-    m = dt.month + 12*a - 3
+    m = dt.month + 12 * a - 3
 
-    return dt.day + (153*m + 2)//5 + 365*y + y//4 - y//100 + y//400 - 32045
+    return dt.day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
+
 
 def jdn2datetime(jdn):
     "converts julian date number to python datetime"
@@ -182,30 +197,32 @@ def jdn2datetime(jdn):
     h = 5 * g + 2
     D = (h % 153) / 5 + 1
     M = (h / 153 + 2) % 12 + 1
-    Y = e/1461 - 4716 + (12 + 2 - M) / 12
+    Y = e / 1461 - 4716 + (12 + 2 - M) / 12
 
     return datetime.datetime(Y, M, D)
+
 
 def hextimedate2datetime(td):
     "extract date from Lotus Notes ID"
     assert len(td) == 16
 
     dt = jdn2datetime(int(td[2:8], 16))
-    tim = int(td[8:], 16) # in 1/100th of a second
-    dt2 = dt.replace(hour=tim//360000, minute=tim//6000%60, second=tim//100%60, microsecond=(tim%100)*10000)
+    tim = int(td[8:], 16)  # in 1/100th of a second
+    dt2 = dt.replace(hour=tim // 360000, minute=tim // 6000 % 60, second=tim // 100 % 60, microsecond=(tim % 100) * 10000)
 
     flags = int(td[:2], 16)
-    if flags & 1<<7:
-        if flags & 1<<6:
+    if flags & 1 << 7:
+        if flags & 1 << 6:
             prefix = +1
         else:
             prefix = -1
 
         hours = flags & 15
-        minutes = (flags>>4 & 3) * 15
-        dt2 = dt2 + datetime.timedelta(seconds=prefix*(hours*3600+minutes*50))
-        
+        minutes = (flags >> 4 & 3) * 15
+        dt2 = dt2 + datetime.timedelta(seconds=prefix * (hours * 3600 + minutes * 50))
+
     return dt2
+
 
 class DateTimeEncoder(json.JSONEncoder):
     """
@@ -217,6 +234,7 @@ class DateTimeEncoder(json.JSONEncoder):
         elif isinstance(obj, datetime.date):
             return obj.isoformat()
         return json.JSONEncoder.default(obj)
+
 
 def as_json(obj):
     "helper json dumps function with support for datetime"
@@ -244,4 +262,3 @@ if __name__ == "__main__":
             unid = 'C1257DDC00486761'
             hextimedate2datetime(unid)
     unittest.main()
-
