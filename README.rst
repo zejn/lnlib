@@ -11,13 +11,14 @@ Usage
 
 To read data from Notes, you must first establish a NotesSession::
 
-    from lnlib import get_session, list_views, list_documents, describe_document, search, fetch_documents_since
+    from lnlib import (get_session, list_views, list_documents,
+        describe_document, search, fetch_documents_since)
 
-    session = get_session(ln_key="user's password goes here")
+    session = get_session(ln_key="user's password")
 
 Sometimes session needs to be started in Notes home directory. You can pass ``workdir`` parameter and it will chdir to that directory before initializing session::
 
-    session = get_session(ln_key="user's password goes here", workdir=r'C:\Users\user\AppData\Notes')
+    session = get_session(ln_key="user's password", workdir=r'C:\Users\user\AppData\Notes')
 
 With established session, you can now connect to databases::
 
@@ -47,7 +48,9 @@ Print its UNID and NotesURL::
     print(doc.UniversalID)
     print(doc.NotesURL)
 
-.. tip:: You can use NotesURL in web page and browser will call Notes to open document.
+..
+
+ * You can use NotesURL in web page and browser will call Notes to open document.
 
 Describe document and convert it to pure python object::
 
@@ -72,4 +75,6 @@ Fetch only documents, changed in last 24 hours::
     for doc in fetch_documents_since(session, db, since):
         print(doc.UniversalID)
 
-.. tip:: Using ``fetch_documents_since``, one can keep up with document changes without scanning full database each turn.
+..
+
+ * Using ``fetch_documents_since``, one can keep up with document changes without scanning full database each turn.
