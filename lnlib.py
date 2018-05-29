@@ -92,7 +92,7 @@ def windt2datetime(pytim):
 
 def _dt(obj):
     "convert pywintypes.Time to datetime"
-    if not type(obj) == type(pywintypes.Time(1)):
+    if not type(obj) == type(pywintypes.TimeType):
         return obj
     else:
         return windt2datetime(obj)
